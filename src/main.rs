@@ -4,11 +4,6 @@ enum TokenType {
     BinaryOp,
 }
 
-#[derive(Debug)]
-struct Token {
-    text: String,
-}
-
 fn lex(text: &str) -> TokenType {
     match text {
         "+" | "-" | "*" | "/" | "==" => TokenType::BinaryOp,
@@ -22,19 +17,15 @@ fn lex(text: &str) -> TokenType {
     }
 }
 
-fn parse_input(text: String) -> Vec<Token> {
-    let mut stack: Vec<Token> = vec![];
+fn parse_input(text: String) -> Vec<f64> {
+    let mut stack: Vec<f64> = vec![];
 
     for item in text.split_whitespace() {
         match lex(item) {
-            TokenType::Num => {
-                stack.push(Token {
-                    text: item.to_string()
-                })
-            },
+            TokenType::Num => {stack.push(item.parse::<f64>().unwrap())},
             TokenType::BinaryOp => {
-                let b = stack.pop().unwrap().text.parse::<f64>().unwrap();
-                let a = stack.pop().unwrap().text.parse::<f64>().unwrap();
+                let b = stack.pop().unwrap();
+                let a = stack.pop().unwrap();
                 let result = match item {
                     "+" => a + b,
                     "-" => a - b,
@@ -42,9 +33,7 @@ fn parse_input(text: String) -> Vec<Token> {
                     "/" => a / b,
                     _ => panic!("Unknown binary op: {}", item),
                 };
-                stack.push(Token {
-                    text: result.to_string()
-                })
+                stack.push(result);
             }
         }
     }
@@ -53,7 +42,7 @@ fn parse_input(text: String) -> Vec<Token> {
 }
 
 fn main() {
-    let input = "110 1 200 + 10 /".to_string();
+    let input = "1 200 + 10 /".to_string();
     // println!("Input string = {}", input);
 
     let stack = parse_input(input);
