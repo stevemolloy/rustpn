@@ -9,6 +9,8 @@ enum TokenType {
     Keyword,
 }
 
+type Stack = Vec<f64>;
+
 fn lex(text: &str) -> TokenType {
     match text {
         "+" | "-" | "*" | "/" | "==" => TokenType::BinaryOp,
@@ -23,7 +25,7 @@ fn lex(text: &str) -> TokenType {
     }
 }
 
-fn parse_input(text: &str, mut stack: Vec<f64>) -> Vec<f64> {
+fn parse_input(text: &str, mut stack: Stack) -> Stack {
     for item in text.split_whitespace() {
         match lex(item) {
             TokenType::Num => {stack.push(item.parse::<f64>().unwrap())},
@@ -55,7 +57,7 @@ fn parse_input(text: &str, mut stack: Vec<f64>) -> Vec<f64> {
 fn main() {
     let mut stdout = io::stdout();
     let stdin = io::stdin();
-    let mut stack: Vec<f64> = vec![];
+    let mut stack: Stack = vec![];
     println!("RustPN: A Rust powered RPN calculator.");
 
     loop {
