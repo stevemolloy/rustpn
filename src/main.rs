@@ -1,12 +1,17 @@
+use std::io;
+use std::process::exit;
+
 #[derive(Debug,PartialEq,Clone,Copy)]
 enum TokenType {
     Num,
     BinaryOp,
+    Keyword,
 }
 
 fn lex(text: &str) -> TokenType {
     match text {
         "+" | "-" | "*" | "/" | "==" => TokenType::BinaryOp,
+        "clear" | "reset" | "exit" => TokenType::Keyword,
         _ => {
             if text.parse::<f64>().is_ok() {
                 TokenType::Num
@@ -17,9 +22,7 @@ fn lex(text: &str) -> TokenType {
     }
 }
 
-fn parse_input(text: String) -> Vec<f64> {
-    let mut stack: Vec<f64> = vec![];
-
+fn parse_input(text: &str, mut stack: Vec<f64>) -> Vec<f64> {
     for item in text.split_whitespace() {
         match lex(item) {
             TokenType::Num => {stack.push(item.parse::<f64>().unwrap())},
@@ -34,6 +37,13 @@ fn parse_input(text: String) -> Vec<f64> {
                     _ => panic!("Unknown binary op: {}", item),
                 };
                 stack.push(result);
+            },
+            TokenType::Keyword => {
+                match item {
+                    "clear" | "reset" => stack.clear(),
+                    "exit" => exit(0),
+                    _ => panic!("Unknown keyword: {}", item),
+                }
             }
         }
     }
@@ -42,12 +52,14 @@ fn parse_input(text: String) -> Vec<f64> {
 }
 
 fn main() {
-    let input = "1 200 + 10 /".to_string();
-    // println!("Input string = {}", input);
+    let stdin = io::stdin();
+    let mut stack: Vec<f64> = vec![];
 
-    let stack = parse_input(input);
-    assert!(!stack.is_empty(), "Cannot work with an empty stack");
-    assert!(stack.len() == 1, "Unprocessed elements in the stack");
+    loop {
+        let mut input = String::new();
+        stdin.read_line(&mut input).unwrap();
 
-    println!("Stack at end = {:?}", stack);
+        stack = parse_input(&input, stack);
+        println!("Stack (len={}): {:#?}", stack.len(), stack);
+    }
 }
