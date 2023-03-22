@@ -1,4 +1,5 @@
 use std::io;
+use std::io::Write;
 use std::process::exit;
 
 #[derive(Debug,PartialEq,Clone,Copy)]
@@ -52,10 +53,14 @@ fn parse_input(text: &str, mut stack: Vec<f64>) -> Vec<f64> {
 }
 
 fn main() {
+    let mut stdout = io::stdout();
     let stdin = io::stdin();
     let mut stack: Vec<f64> = vec![];
+    println!("RustPN: A Rust powered RPN calculator.");
 
     loop {
+        stdout.write(b"> ").unwrap();
+        stdout.flush().unwrap();
         let mut input = String::new();
         stdin.read_line(&mut input).unwrap();
 
