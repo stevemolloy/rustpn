@@ -7,6 +7,7 @@ enum TokenType {
     Num,
     BinaryOp,
     Keyword,
+    Error,
 }
 
 type Stack = Vec<f64>;
@@ -19,7 +20,8 @@ fn lex(text: &str) -> TokenType {
             if text.parse::<f64>().is_ok() {
                 TokenType::Num
             } else {
-                panic!("Unrecognised token: {}", text);
+                println!("Cannot understand token: {}", text);
+                TokenType::Error
             }
         }
     }
@@ -28,24 +30,33 @@ fn lex(text: &str) -> TokenType {
 fn parse_input(text: &str, mut stack: Stack) -> Stack {
     for item in text.split_whitespace() {
         match lex(item) {
+            TokenType::Error => break,
             TokenType::Num => {stack.push(item.parse::<f64>().unwrap())},
             TokenType::BinaryOp => {
-                let b = stack.pop().unwrap();
-                let a = stack.pop().unwrap();
-                let result = match item {
-                    "+" => a + b,
-                    "-" => a - b,
-                    "*" => a * b,
-                    "/" => a / b,
-                    _ => panic!("Unknown binary op: {}", item),
-                };
-                stack.push(result);
+                if stack.len() >= 2 {
+                    let b = stack.pop().unwrap();
+                    let a = stack.pop().unwrap();
+                    if let Some(result) = match item {
+                        "+" => Some(a + b),
+                        "-" => Some(a - b),
+                        "*" => Some(a * b),
+                        "/" => Some(a / b),
+                        _ => {
+                            println!("Unknown binary op: {}", item);
+                            None
+                        }
+                    } {
+                        stack.push(result);
+                    }
+                } else {
+                    println!("Insufficient values on stack for binary operation");
+                }
             },
             TokenType::Keyword => {
                 match item {
                     "clear" | "reset" => stack.clear(),
                     "exit" => exit(0),
-                    _ => panic!("Unknown keyword: {}", item),
+                    _ => println!("Unknown keyword: {}", item),
                 }
             }
         }
