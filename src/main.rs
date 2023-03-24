@@ -63,6 +63,9 @@ fn lex(text: &str) -> TokenType {
         _ => {
             if text.parse::<f64>().is_ok() {
                 TokenType::Num
+            } else if text.chars().all(char::is_alphanumeric) {
+                println!("{:?}", text);
+                TokenType::Strng
             } else {
                 println!("Cannot understand token: {}", text);
                 TokenType::Error
