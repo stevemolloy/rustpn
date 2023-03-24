@@ -2,12 +2,14 @@ use std::fmt;
 use std::io;
 use std::io::Write;
 use std::process::exit;
+use std::collections::HashMap;
 
 #[derive(PartialEq)]
 enum TokenType {
     Num,
     Strng,
     BinaryOp,
+    Assignment,
     Keyword,
     Error,
 }
@@ -29,6 +31,11 @@ impl fmt::Display for Token {
 }
 
 struct Stack(pub Vec<Token>);
+
+struct State {
+    stack: Stack,
+    assignments: HashMap::<String, f64>,
+}
 
 impl Stack {
     fn push(&mut self, item: Token) {
@@ -60,6 +67,7 @@ fn lex(text: &str) -> TokenType {
     match text {
         "+" | "-" | "*" | "/" => TokenType::BinaryOp,
         "clear" | "reset" | "exit" | "print" => TokenType::Keyword,
+        "=" => TokenType::Assignment,
         _ => {
             if text.parse::<f64>().is_ok() {
                 TokenType::Num
@@ -73,7 +81,7 @@ fn lex(text: &str) -> TokenType {
     }
 }
 
-fn parse_input(text: &str, mut stack: Stack) -> Stack {
+fn parse_input(text: &str, mut state: State) -> State {
     for item in text.split_whitespace() {
         match lex(item) {
             TokenType::Error => break,
@@ -83,24 +91,49 @@ fn parse_input(text: &str, mut stack: Stack) -> Stack {
                     value: item.parse::<f64>().unwrap(),
                     text: "".to_string(),
                 };
-                stack.push(tok);
+                state.stack.push(tok);
             }
             TokenType::Strng => {
-                let tok = Token{
-                    token_type: TokenType::Strng,
-                    value: 0f64,
-                    text: item.to_string(),
-                };
-                stack.push(tok);
+                if state.assignments.contains_key(item) {
+                    let tok = Token{
+                        token_type: TokenType::Num,
+                        value: state.assignments[item],
+                        text: "".to_string(),
+                    };
+                    state.stack.push(tok);
+                } else {
+                    let tok = Token{
+                        token_type: TokenType::Strng,
+                        value: 0f64,
+                        text: item.to_string(),
+                    };
+                    state.stack.push(tok);
+                }
             },
+            TokenType::Assignment => {
+                if state.stack.len() >= 2 {
+                    let b = state.stack.pop().unwrap();
+                    let a = state.stack.pop().unwrap();
+                    if !(a.token_type == TokenType::Strng
+                        && b.token_type == TokenType::Num) {
+                        state.stack.push(a);
+                        state.stack.push(b);
+                        println!("ERROR: Top vals of stack not suitable for assignment");
+                    } else {
+                        state.assignments.insert(a.text, b.value);
+                    }
+                } else {
+                    println!("ERROR: Insufficient values on stack for binary operation");
+                }
+            }
             TokenType::BinaryOp => {
-                if stack.len() >= 2 {
-                    let b = stack.pop().unwrap();
-                    let a = stack.pop().unwrap();
+                if state.stack.len() >= 2 {
+                    let b = state.stack.pop().unwrap();
+                    let a = state.stack.pop().unwrap();
                     if !(a.token_type == TokenType::Num
                         && b.token_type == TokenType::Num) {
-                        stack.push(a);
-                        stack.push(b);
+                        state.stack.push(a);
+                        state.stack.push(b);
                         println!("ERROR: Top vals of stack are not numbers");
                     } else if let Some(result) = match item {
                         "+" => Some(a.value + b.value),
@@ -117,7 +150,7 @@ fn parse_input(text: &str, mut stack: Stack) -> Stack {
                             value: result,
                             text: "".to_string(),
                         };
-                        stack.push(tok);
+                        state.stack.push(tok);
                     }
                 } else {
                     println!("ERROR: Insufficient values on stack for binary operation");
@@ -125,11 +158,15 @@ fn parse_input(text: &str, mut stack: Stack) -> Stack {
             },
             TokenType::Keyword => {
                 match item {
-                    "clear" | "reset" => stack.clear(),
+                    "clear" => state.stack.clear(),
+                    "reset" => {
+                        state.stack.clear();
+                        state.assignments.clear();
+                    }
                     "exit" => exit(0),
                     "print" => {
-                        if stack.len() > 0 {
-                            let val = stack.pop().unwrap();
+                        if state.stack.len() > 0 {
+                            let val = state.stack.pop().unwrap();
                             println!("{}", val);
                         } else {
                             println!("ERROR: Nothing on the stack to print.");
@@ -141,13 +178,18 @@ fn parse_input(text: &str, mut stack: Stack) -> Stack {
         }
     }
 
-    return stack;
+    return state;
 }
 
 fn main() {
     let mut stdout = io::stdout();
     let stdin = io::stdin();
-    let mut stack: Stack = Stack(vec![]);
+
+    let mut state = State {
+        stack: Stack(vec![]),
+        assignments: HashMap::<String, f64>::new(),
+    };
+
     println!("RustPN: A Rust powered RPN calculator.");
 
     loop {
@@ -156,7 +198,8 @@ fn main() {
         let mut input = String::new();
         stdin.read_line(&mut input).unwrap();
 
-        stack = parse_input(&input, stack);
-        println!("Stack (len={}):\n{}", stack.len(), stack);
+        state = parse_input(&input, state);
+        println!("Assigned variables: {:?}", state.assignments);
+        println!("Stack (len={}):\n{}", state.stack.len(), state.stack);
     }
 }
