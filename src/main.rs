@@ -58,7 +58,7 @@ impl fmt::Display for Stack {
 
 fn lex(text: &str) -> TokenType {
     match text {
-        "+" | "-" | "*" | "/" | "==" => TokenType::BinaryOp,
+        "+" | "-" | "*" | "/" => TokenType::BinaryOp,
         "clear" | "reset" | "exit" | "print" => TokenType::Keyword,
         _ => {
             if text.parse::<f64>().is_ok() {
