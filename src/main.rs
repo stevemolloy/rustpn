@@ -3,7 +3,7 @@ use std::io;
 use std::io::Write;
 use std::process::exit;
 
-#[derive(Debug,PartialEq,Clone,Copy)]
+#[derive(PartialEq)]
 enum TokenType {
     Num,
     Strng,
