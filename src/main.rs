@@ -50,10 +50,9 @@ impl Stack {
 
 impl fmt::Display for Stack {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for tok in &self.0 {
-            write!(f, "    {}\n", tok);
-        }
-        Ok(())
+        self.0.iter().fold(Ok(()), |result, tok| {
+            result.and_then(|_| writeln!(f, "{}", tok))
+        })
     }
 }
 
