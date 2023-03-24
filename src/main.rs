@@ -64,10 +64,9 @@ fn lex(text: &str) -> TokenType {
             if text.parse::<f64>().is_ok() {
                 TokenType::Num
             } else if text.chars().all(char::is_alphanumeric) {
-                println!("{:?}", text);
                 TokenType::Strng
             } else {
-                println!("Cannot understand token: {}", text);
+                println!("ERROR: Cannot understand token: {}", text);
                 TokenType::Error
             }
         }
@@ -98,13 +97,18 @@ fn parse_input(text: &str, mut stack: Stack) -> Stack {
                 if stack.len() >= 2 {
                     let b = stack.pop().unwrap();
                     let a = stack.pop().unwrap();
-                    if let Some(result) = match item {
+                    if !(a.token_type == TokenType::Num
+                        && b.token_type == TokenType::Num) {
+                        stack.push(a);
+                        stack.push(b);
+                        println!("ERROR: Top vals of stack are not numbers");
+                    } else if let Some(result) = match item {
                         "+" => Some(a.value + b.value),
                         "-" => Some(a.value - b.value),
                         "*" => Some(a.value * b.value),
                         "/" => Some(a.value / b.value),
                         _ => {
-                            println!("Unknown binary op: {}", item);
+                            println!("ERROR: Unknown binary op: {}", item);
                             None
                         }
                     } {
@@ -116,7 +120,7 @@ fn parse_input(text: &str, mut stack: Stack) -> Stack {
                         stack.push(tok);
                     }
                 } else {
-                    println!("Insufficient values on stack for binary operation");
+                    println!("ERROR: Insufficient values on stack for binary operation");
                 }
             },
             TokenType::Keyword => {
@@ -128,10 +132,10 @@ fn parse_input(text: &str, mut stack: Stack) -> Stack {
                             let val = stack.pop().unwrap();
                             println!("{}", val);
                         } else {
-                            println!("Nothing on the stack to print.");
+                            println!("ERROR: Nothing on the stack to print.");
                         }
                     },
-                    _ => println!("Unknown keyword: {}", item),
+                    _ => println!("ERROR: Unknown keyword: {}", item),
                 }
             }
         }
