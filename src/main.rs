@@ -7,7 +7,7 @@ use std::collections::HashMap;
 #[derive(PartialEq)]
 enum TokenType {
     Num,
-    Strng,
+    Var,
     BinaryOp,
     Assignment,
     Keyword,
@@ -24,7 +24,7 @@ impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.token_type {
             TokenType::Num => write!(f, "{}", self.value),
-            TokenType::Strng => write!(f, "{}", self.text),
+            TokenType::Var => write!(f, "{}", self.text),
             _ => unreachable!("Trying to disp a non-string/value"),
         }
     }
@@ -72,7 +72,7 @@ fn lex(text: &str) -> TokenType {
             if text.parse::<f64>().is_ok() {
                 TokenType::Num
             } else if text.chars().all(char::is_alphanumeric) {
-                TokenType::Strng
+                TokenType::Var
             } else {
                 println!("ERROR: Cannot understand token: {}", text);
                 TokenType::Error
@@ -93,28 +93,19 @@ fn parse_input(text: &str, mut state: State) -> State {
                 };
                 state.stack.push(tok);
             }
-            TokenType::Strng => {
-                if state.assignments.contains_key(item) {
-                    let tok = Token{
-                        token_type: TokenType::Num,
-                        value: state.assignments[item],
-                        text: "".to_string(),
-                    };
-                    state.stack.push(tok);
-                } else {
-                    let tok = Token{
-                        token_type: TokenType::Strng,
-                        value: 0f64,
-                        text: item.to_string(),
-                    };
-                    state.stack.push(tok);
-                }
+            TokenType::Var => {
+                let tok = Token{
+                    token_type: TokenType::Var,
+                    value: 0f64,
+                    text: item.to_string(),
+                };
+                state.stack.push(tok);
             },
             TokenType::Assignment => {
                 if state.stack.len() >= 2 {
                     let b = state.stack.pop().unwrap();
                     let a = state.stack.pop().unwrap();
-                    if !(a.token_type == TokenType::Strng
+                    if !(a.token_type == TokenType::Var
                         && b.token_type == TokenType::Num) {
                         state.stack.push(a);
                         state.stack.push(b);
@@ -130,27 +121,39 @@ fn parse_input(text: &str, mut state: State) -> State {
                 if state.stack.len() >= 2 {
                     let b = state.stack.pop().unwrap();
                     let a = state.stack.pop().unwrap();
-                    if !(a.token_type == TokenType::Num
-                        && b.token_type == TokenType::Num) {
+                    if !((a.token_type == TokenType::Num || a.token_type == TokenType::Var)
+                        && (b.token_type == TokenType::Num || b.token_type == TokenType::Var)) {
                         state.stack.push(a);
                         state.stack.push(b);
                         println!("ERROR: Top vals of stack are not numbers");
-                    } else if let Some(result) = match item {
-                        "+" => Some(a.value + b.value),
-                        "-" => Some(a.value - b.value),
-                        "*" => Some(a.value * b.value),
-                        "/" => Some(a.value / b.value),
-                        _ => {
-                            println!("ERROR: Unknown binary op: {}", item);
-                            None
-                        }
-                    } {
-                        let tok = Token{
-                            token_type: TokenType::Num,
-                            value: result,
-                            text: "".to_string(),
+                    } else {
+                        let val1 = match a.token_type {
+                            TokenType::Num => a.value,
+                            TokenType::Var => state.assignments[&a.text],
+                            _ => unreachable!(),
                         };
-                        state.stack.push(tok);
+                        let val2 = match b.token_type {
+                            TokenType::Num => b.value,
+                            TokenType::Var => state.assignments[&b.text],
+                            _ => unreachable!(),
+                        };
+                        if let Some(result) = match item {
+                            "+" => Some(val1 + val2),
+                            "-" => Some(val1 - val2),
+                            "*" => Some(val1 * val2),
+                            "/" => Some(val1 / val2),
+                            _ => {
+                                println!("ERROR: Unknown binary op: {}", item);
+                                None
+                            },
+                        } {
+                            let tok = Token {
+                                token_type: TokenType::Num,
+                                value: result,
+                                text: "".to_string(),
+                            };
+                            state.stack.push(tok);
+                        }
                     }
                 } else {
                     println!("ERROR: Insufficient values on stack for binary operation");
