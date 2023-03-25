@@ -4,7 +4,7 @@ use std::io::Write;
 use std::process::exit;
 use std::collections::HashMap;
 
-#[derive(PartialEq)]
+#[derive(Clone,PartialEq)]
 enum TokenType {
     Num,
     Var,
@@ -14,6 +14,7 @@ enum TokenType {
     Error,
 }
 
+#[derive(Clone)]
 struct Token {
     token_type: TokenType,
     value: f64,
@@ -66,7 +67,7 @@ impl fmt::Display for Stack {
 fn lex(text: &str) -> TokenType {
     match text {
         "+" | "-" | "*" | "/" => TokenType::BinaryOp,
-        "clear" | "reset" | "exit" | "print" | "swap" => TokenType::Keyword,
+        "clear" | "reset" | "exit" | "print" | "swap" | "dup" => TokenType::Keyword,
         "=" => TokenType::Assignment,
         _ => {
             if text.parse::<f64>().is_ok() {
@@ -173,6 +174,15 @@ fn parse_input(text: &str, mut state: State) -> State {
                             println!("{}", val);
                         } else {
                             println!("ERROR: Nothing on the stack to print.");
+                        }
+                    },
+                    "dup" => {
+                        if state.stack.len() > 0 {
+                            let val = state.stack.pop().unwrap();
+                            state.stack.push(val.clone());
+                            state.stack.push(val.clone());
+                        } else {
+                            println!("ERROR: Nothing on the stack to duplicate.");
                         }
                     },
                     "swap" => {
