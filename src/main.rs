@@ -52,7 +52,11 @@ impl Stack {
     }
 
     fn clear(&mut self) {
-        self.0.clear()
+        self.0.clear();
+    }
+
+    fn is_empty(&mut self) -> bool {
+        self.0.is_empty()
     }
 }
 
@@ -103,61 +107,65 @@ fn parse_input(text: &str, mut state: State) -> State {
                 state.stack.push(tok);
             },
             TokenType::Assignment => {
-                if state.stack.len() >= 2 {
-                    let b = state.stack.pop().unwrap();
-                    let a = state.stack.pop().unwrap();
-                    if !(a.token_type == TokenType::Var
-                        && b.token_type == TokenType::Num) {
-                        state.stack.push(a);
-                        state.stack.push(b);
-                        println!("ERROR: Top vals of stack not suitable for assignment");
-                    } else {
-                        state.assignments.insert(a.text, b.value);
-                    }
-                } else {
+                if state.stack.len() < 2 {
                     println!("ERROR: Insufficient values on stack for binary operation");
+                    break;
                 }
+                let b = state.stack.pop().unwrap();
+                let a = state.stack.pop().unwrap();
+                if !(a.token_type == TokenType::Var
+                    && b.token_type == TokenType::Num) {
+                    state.stack.push(a);
+                    state.stack.push(b);
+                    println!("ERROR: Top vals of stack not suitable for assignment");
+                    break;
+                }
+                state.assignments.insert(a.text, b.value);
             }
             TokenType::BinaryOp => {
-                if state.stack.len() >= 2 {
-                    let b = state.stack.pop().unwrap();
-                    let a = state.stack.pop().unwrap();
-                    if !((a.token_type == TokenType::Num || a.token_type == TokenType::Var)
-                        && (b.token_type == TokenType::Num || b.token_type == TokenType::Var)) {
-                        state.stack.push(a);
-                        state.stack.push(b);
-                        println!("ERROR: Top vals of stack are not numbers");
-                    } else {
-                        let val1 = match a.token_type {
-                            TokenType::Num => a.value,
-                            TokenType::Var => state.assignments[&a.text],
-                            _ => unreachable!(),
-                        };
-                        let val2 = match b.token_type {
-                            TokenType::Num => b.value,
-                            TokenType::Var => state.assignments[&b.text],
-                            _ => unreachable!(),
-                        };
-                        if let Some(result) = match item {
-                            "+" => Some(val1 + val2),
-                            "-" => Some(val1 - val2),
-                            "*" => Some(val1 * val2),
-                            "/" => Some(val1 / val2),
-                            _ => {
-                                println!("ERROR: Unknown binary op: {}", item);
-                                None
-                            },
-                        } {
-                            let tok = Token {
-                                token_type: TokenType::Num,
-                                value: result,
-                                text: "".to_string(),
-                            };
-                            state.stack.push(tok);
-                        }
-                    }
-                } else {
+                if state.stack.len() < 2 {
                     println!("ERROR: Insufficient values on stack for binary operation");
+                    break;
+                }
+                let b = state.stack.pop().unwrap();
+                if b.token_type == TokenType::Var && !state.assignments.contains_key(&b.text) {
+                    println!("ERROR: Var {} has not yet been assigned a value", b.text);
+                    state.stack.push(b);
+                    break;
+                }
+                let a = state.stack.pop().unwrap();
+                if a.token_type == TokenType::Var && !state.assignments.contains_key(&a.text) {
+                    println!("ERROR: Var {} has not yet been assigned a value", a.text);
+                    state.stack.push(a);
+                    state.stack.push(b);
+                    break;
+                }
+                let val1 = match a.token_type {
+                    TokenType::Num => a.value,
+                    TokenType::Var => state.assignments[&a.text],
+                    _ => unreachable!(),
+                };
+                let val2 = match b.token_type {
+                    TokenType::Num => b.value,
+                    TokenType::Var => state.assignments[&b.text],
+                    _ => unreachable!(),
+                };
+                if let Some(result) = match item {
+                    "+" => Some(val1 + val2),
+                    "-" => Some(val1 - val2),
+                    "*" => Some(val1 * val2),
+                    "/" => Some(val1 / val2),
+                    _ => {
+                        println!("ERROR: Unknown binary op: {}", item);
+                        None
+                    },
+                } {
+                    let tok = Token {
+                        token_type: TokenType::Num,
+                        value: result,
+                        text: "".to_string(),
+                    };
+                    state.stack.push(tok);
                 }
             },
             TokenType::Keyword => {
@@ -169,31 +177,30 @@ fn parse_input(text: &str, mut state: State) -> State {
                     }
                     "exit" => exit(0),
                     "print" => {
-                        if state.stack.len() > 0 {
-                            let val = state.stack.pop().unwrap();
-                            println!("{}", val);
-                        } else {
+                        if state.stack.is_empty() {
                             println!("ERROR: Nothing on the stack to print.");
+                            break;
                         }
+                        let val = state.stack.pop().unwrap();
+                        println!("{}", val);
                     },
                     "dup" => {
-                        if state.stack.len() > 0 {
-                            let val = state.stack.pop().unwrap();
-                            state.stack.push(val.clone());
-                            state.stack.push(val.clone());
-                        } else {
+                        if state.stack.is_empty() {
                             println!("ERROR: Nothing on the stack to duplicate.");
+                            break;
                         }
+                        let val = state.stack.pop().unwrap();
+                        state.stack.push(val.clone());
+                        state.stack.push(val.clone());
                     },
                     "swap" => {
-                        if state.stack.len() >= 2 {
-                            let a = state.stack.pop().unwrap();
-                            let b = state.stack.pop().unwrap();
-                            state.stack.push(a);
-                            state.stack.push(b);
-                        } else {
+                        if state.stack.len() < 2 {
                             println!("ERROR: Need at least two values on stack to swap.");
                         }
+                        let a = state.stack.pop().unwrap();
+                        let b = state.stack.pop().unwrap();
+                        state.stack.push(a);
+                        state.stack.push(b);
                     },
                     _ => println!("ERROR: Unknown keyword: {}", item),
                 }
