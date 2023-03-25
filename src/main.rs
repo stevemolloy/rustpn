@@ -84,6 +84,23 @@ impl State {
             }
         );
     }
+
+    fn do_assignment(&mut self) {
+        if self.stack.len() < 2 {
+            println!("ERROR: Insufficient values for assignment");
+            return;
+        }
+        let b = self.stack.pop().unwrap();
+        let a = self.stack.pop().unwrap();
+        if !(a.token_type == TokenType::Var
+            && b.token_type == TokenType::Num) {
+            self.stack.push(a);
+            self.stack.push(b);
+            println!("ERROR: Top vals of stack not suitable for assignment");
+            return;
+        }
+        self.assignments.insert(a.text, b.value);
+    }
 }
 
 fn lex(text: &str) -> TokenType {
@@ -118,21 +135,7 @@ fn parse_input(text: &str, mut state: State) -> State {
             TokenType::Error => break,
             TokenType::Num => state.push_num(&item),
             TokenType::Var => state.push_var(&item),
-            TokenType::Assignment => {
-                if !check_sufficient_stack_len(&state.stack, 2) {
-                    break;
-                }
-                let b = state.stack.pop().unwrap();
-                let a = state.stack.pop().unwrap();
-                if !(a.token_type == TokenType::Var
-                    && b.token_type == TokenType::Num) {
-                    state.stack.push(a);
-                    state.stack.push(b);
-                    println!("ERROR: Top vals of stack not suitable for assignment");
-                    break;
-                }
-                state.assignments.insert(a.text, b.value);
-            }
+            TokenType::Assignment => state.do_assignment(),
             TokenType::BinaryOp => {
                 if !check_sufficient_stack_len(&state.stack, 2) {
                     break;
