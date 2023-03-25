@@ -71,7 +71,7 @@ impl fmt::Display for Stack {
 fn lex(text: &str) -> TokenType {
     match text {
         "+" | "-" | "*" | "/" => TokenType::BinaryOp,
-        "clear" | "reset" | "exit" | "print" | "swap" | "dup" => TokenType::Keyword,
+        "clear" | "reset" | "exit" | "print" | "swap" | "dup" | "drop" => TokenType::Keyword,
         "=" => TokenType::Assignment,
         _ => {
             if text.parse::<f64>().is_ok() {
@@ -183,6 +183,13 @@ fn parse_input(text: &str, mut state: State) -> State {
                         }
                         let val = state.stack.pop().unwrap();
                         println!("{}", val);
+                    },
+                    "drop" => {
+                        if state.stack.is_empty() {
+                            println!("ERROR: Nothing on the stack to drop.");
+                            break;
+                        }
+                        state.stack.pop().unwrap();
                     },
                     "dup" => {
                         if state.stack.is_empty() {
