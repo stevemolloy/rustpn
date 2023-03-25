@@ -54,10 +54,6 @@ impl Stack {
     fn clear(&mut self) {
         self.0.clear();
     }
-
-    fn is_empty(&mut self) -> bool {
-        self.0.is_empty()
-    }
 }
 
 impl fmt::Display for Stack {
@@ -86,29 +82,38 @@ fn lex(text: &str) -> TokenType {
     }
 }
 
+fn create_num_token(item: &str) -> Token {
+    return Token{
+        token_type: TokenType::Num,
+        value: item.parse::<f64>().unwrap(),
+        text: "".to_string(),
+    };
+}
+
+fn create_var_token(item: &str) -> Token {
+    return Token{
+        token_type: TokenType::Var,
+        value: 0f64,
+        text: item.to_string(),
+    };
+}
+
+fn check_sufficient_stack_len(stack: &Stack, length: usize) -> bool {
+    if stack.len() < length {
+        println!("ERROR: Insufficient values on stack.");
+        return false;
+    }
+    return true;
+}
+
 fn parse_input(text: &str, mut state: State) -> State {
     for item in text.split_whitespace() {
         match lex(item) {
             TokenType::Error => break,
-            TokenType::Num => {
-                let tok = Token{
-                    token_type: TokenType::Num,
-                    value: item.parse::<f64>().unwrap(),
-                    text: "".to_string(),
-                };
-                state.stack.push(tok);
-            }
-            TokenType::Var => {
-                let tok = Token{
-                    token_type: TokenType::Var,
-                    value: 0f64,
-                    text: item.to_string(),
-                };
-                state.stack.push(tok);
-            },
+            TokenType::Num => state.stack.push(create_num_token(&item)),
+            TokenType::Var => state.stack.push(create_var_token(&item)),
             TokenType::Assignment => {
-                if state.stack.len() < 2 {
-                    println!("ERROR: Insufficient values on stack for binary operation");
+                if !check_sufficient_stack_len(&state.stack, 2) {
                     break;
                 }
                 let b = state.stack.pop().unwrap();
@@ -123,8 +128,7 @@ fn parse_input(text: &str, mut state: State) -> State {
                 state.assignments.insert(a.text, b.value);
             }
             TokenType::BinaryOp => {
-                if state.stack.len() < 2 {
-                    println!("ERROR: Insufficient values on stack for binary operation");
+                if !check_sufficient_stack_len(&state.stack, 2) {
                     break;
                 }
                 let b = state.stack.pop().unwrap();
@@ -177,23 +181,20 @@ fn parse_input(text: &str, mut state: State) -> State {
                     }
                     "exit" => exit(0),
                     "print" => {
-                        if state.stack.is_empty() {
-                            println!("ERROR: Nothing on the stack to print.");
+                        if !check_sufficient_stack_len(&state.stack, 1) {
                             break;
                         }
                         let val = state.stack.pop().unwrap();
                         println!("{}", val);
                     },
                     "drop" => {
-                        if state.stack.is_empty() {
-                            println!("ERROR: Nothing on the stack to drop.");
+                        if !check_sufficient_stack_len(&state.stack, 1) {
                             break;
                         }
                         state.stack.pop().unwrap();
                     },
                     "dup" => {
-                        if state.stack.is_empty() {
-                            println!("ERROR: Nothing on the stack to duplicate.");
+                        if !check_sufficient_stack_len(&state.stack, 1) {
                             break;
                         }
                         let val = state.stack.pop().unwrap();
@@ -201,8 +202,8 @@ fn parse_input(text: &str, mut state: State) -> State {
                         state.stack.push(val.clone());
                     },
                     "swap" => {
-                        if state.stack.len() < 2 {
-                            println!("ERROR: Need at least two values on stack to swap.");
+                        if !check_sufficient_stack_len(&state.stack, 2) {
+                            break;
                         }
                         let a = state.stack.pop().unwrap();
                         let b = state.stack.pop().unwrap();
