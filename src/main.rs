@@ -33,11 +33,6 @@ impl fmt::Display for Token {
 
 struct Stack(pub Vec<Token>);
 
-struct State {
-    stack: Stack,
-    assignments: HashMap::<String, f64>,
-}
-
 impl Stack {
     fn push(&mut self, item: Token) {
         self.0.push(item);
@@ -64,6 +59,33 @@ impl fmt::Display for Stack {
     }
 }
 
+struct State {
+    stack: Stack,
+    assignments: HashMap::<String, f64>,
+}
+
+impl State {
+    fn push_num(&mut self, item: &str) {
+        self.stack.push(
+            Token{
+                token_type: TokenType::Num,
+                value: item.parse::<f64>().unwrap(),
+                text: "".to_string(),
+            }
+        );
+    }
+
+    fn push_var(&mut self, item: &str) {
+        self.stack.push(
+            Token{
+                token_type: TokenType::Var,
+                value: 0f64,
+                text: item.to_string(),
+            }
+        );
+    }
+}
+
 fn lex(text: &str) -> TokenType {
     match text {
         "+" | "-" | "*" | "/" => TokenType::BinaryOp,
@@ -82,22 +104,6 @@ fn lex(text: &str) -> TokenType {
     }
 }
 
-fn create_num_token(item: &str) -> Token {
-    return Token{
-        token_type: TokenType::Num,
-        value: item.parse::<f64>().unwrap(),
-        text: "".to_string(),
-    };
-}
-
-fn create_var_token(item: &str) -> Token {
-    return Token{
-        token_type: TokenType::Var,
-        value: 0f64,
-        text: item.to_string(),
-    };
-}
-
 fn check_sufficient_stack_len(stack: &Stack, length: usize) -> bool {
     if stack.len() < length {
         println!("ERROR: Insufficient values on stack.");
@@ -110,8 +116,8 @@ fn parse_input(text: &str, mut state: State) -> State {
     for item in text.split_whitespace() {
         match lex(item) {
             TokenType::Error => break,
-            TokenType::Num => state.stack.push(create_num_token(&item)),
-            TokenType::Var => state.stack.push(create_var_token(&item)),
+            TokenType::Num => state.push_num(&item),
+            TokenType::Var => state.push_var(&item),
             TokenType::Assignment => {
                 if !check_sufficient_stack_len(&state.stack, 2) {
                     break;
