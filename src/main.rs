@@ -66,7 +66,7 @@ impl fmt::Display for Stack {
 fn lex(text: &str) -> TokenType {
     match text {
         "+" | "-" | "*" | "/" => TokenType::BinaryOp,
-        "clear" | "reset" | "exit" | "print" => TokenType::Keyword,
+        "clear" | "reset" | "exit" | "print" | "swap" => TokenType::Keyword,
         "=" => TokenType::Assignment,
         _ => {
             if text.parse::<f64>().is_ok() {
@@ -173,6 +173,16 @@ fn parse_input(text: &str, mut state: State) -> State {
                             println!("{}", val);
                         } else {
                             println!("ERROR: Nothing on the stack to print.");
+                        }
+                    },
+                    "swap" => {
+                        if state.stack.len() >= 2 {
+                            let a = state.stack.pop().unwrap();
+                            let b = state.stack.pop().unwrap();
+                            state.stack.push(a);
+                            state.stack.push(b);
+                        } else {
+                            println!("ERROR: Need at least two values on stack to swap.");
                         }
                     },
                     _ => println!("ERROR: Unknown keyword: {}", item),
