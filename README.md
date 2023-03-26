@@ -13,15 +13,17 @@ Alphanumeric strings are treated like variables and can also be pushed to the st
 `myvar 2 =` will assign a value of 2 to the variable `myvar`.
 
 ## Operations
-`+`: Pops the top two values off the stack, and pushes their sum.
-
-`-`: Pops the top two values off the stack, and pushes their difference.
-
-`*`: Pops the top two values off the stack, and pushes their product.
-
-`/`: Pops the top two values off the stack, and pushes their quotient.
-
-`=`: Pops the top two values off the stack, and assigns the second value to the first.  Reports an error if the first value popped is not a `var` or the second value is not a number.
+- `+`: Pops the top two values off the stack, and pushes their sum.
+- `-`: Pops the top two values off the stack, and pushes their difference.
+- `*`: Pops the top two values off the stack, and pushes their product.
+- `/`: Pops the top two values off the stack, and pushes their quotient.
+- `=`: Pops the top two values off the stack, and assigns the second value to the first.  Reports an error if the first value popped is not a `var` or the second value is not a number.
 
 ## Keywords
-...
+- `clear` - Drops the entire stack
+- `reset` - Drops the entire stack and deletes all assigned variables
+- `print` - Pops the top of the stack and prints it to the screen
+- `drop` - Pops and discards the top of the stack
+- `dup` - Duplicates the value at the top of the stack (i.e. pops it and then pushes twice)
+- `swap` - Swaps the top two values on the stack
+
