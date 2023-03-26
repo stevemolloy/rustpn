@@ -2,6 +2,11 @@
 This is a Reverse Polish Notation calculator that I built to train my skills with Rust.
 It is already usable, although not what I would call "user friendly" just yet.
 
+## Quick start
+```bash
+cargo run
+```
+
 ## How it works
 For those of you familiar with RPN calculators, it will be easy enough.
 
