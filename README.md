@@ -14,9 +14,13 @@ Alphanumeric strings are treated like variables and can also be pushed to the st
 
 ## Operations
 `+`: Pops the top two values off the stack, and pushes their sum.
+
 `-`: Pops the top two values off the stack, and pushes their difference.
+
 `*`: Pops the top two values off the stack, and pushes their product.
+
 `/`: Pops the top two values off the stack, and pushes their quotient.
+
 `=`: Pops the top two values off the stack, and assigns the second value to the first.  Reports an error if the first value popped is not a `var` or the second value is not a number.
 
 ## Keywords
