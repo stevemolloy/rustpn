@@ -47,7 +47,7 @@ impl Stack {
     }
 
     fn clear(&mut self) {
-        self.0.clear();
+        self.0.clear()
     }
 }
 
@@ -106,7 +106,8 @@ impl State {
 fn lex(text: &str) -> TokenType {
     match text {
         "+" | "-" | "*" | "/" => TokenType::BinaryOp,
-        "clear" | "reset" | "exit" | "print" | "swap" | "dup" | "drop" => TokenType::Keyword,
+        "clear" | "reset" | "exit" | "print" => TokenType::Keyword,
+        "swap" | "dup" | "drop" | "sum" => TokenType::Keyword,
         "=" => TokenType::Assignment,
         _ => {
             if text.parse::<f64>().is_ok() {
@@ -219,6 +220,26 @@ fn parse_input(text: &str, mut state: State) -> State {
                         state.stack.push(a);
                         state.stack.push(b);
                     },
+                    "sum" => {
+                        let result = state.stack.0.iter().fold(
+                            0f64, 
+                            |acc, elem| -> f64 {
+                                let newvalue = match elem.token_type {
+                                    TokenType::Num => elem.value,
+                                    TokenType::Var => state.assignments[&elem.text],
+                                    _ => unreachable!("Not a num or a var"),
+                                };
+                                acc + newvalue
+                            } 
+                        );
+                        state.stack.clear();
+                        let tok = Token {
+                            token_type: TokenType::Num,
+                            value: result,
+                            text: "".to_string(),
+                        };
+                        state.stack.push(tok);
+                    }
                     _ => println!("ERROR: Unknown keyword: {}", item),
                 }
             }
