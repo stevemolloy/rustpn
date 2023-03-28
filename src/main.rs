@@ -1,10 +1,10 @@
+use std::collections::HashMap;
 use std::fmt;
 use std::io;
 use std::io::Write;
 use std::process::exit;
-use std::collections::HashMap;
 
-#[derive(Clone,PartialEq)]
+#[derive(Clone, PartialEq)]
 enum TokenType {
     Num,
     Var,
@@ -61,28 +61,24 @@ impl fmt::Display for Stack {
 
 struct State {
     stack: Stack,
-    assignments: HashMap::<String, f64>,
+    assignments: HashMap<String, f64>,
 }
 
 impl State {
     fn push_num(&mut self, item: &str) {
-        self.stack.push(
-            Token{
-                token_type: TokenType::Num,
-                value: item.parse::<f64>().unwrap(),
-                text: "".to_string(),
-            }
-        );
+        self.stack.push(Token {
+            token_type: TokenType::Num,
+            value: item.parse::<f64>().unwrap(),
+            text: "".to_string(),
+        });
     }
 
     fn push_var(&mut self, item: &str) {
-        self.stack.push(
-            Token{
-                token_type: TokenType::Var,
-                value: 0f64,
-                text: item.to_string(),
-            }
-        );
+        self.stack.push(Token {
+            token_type: TokenType::Var,
+            value: 0f64,
+            text: item.to_string(),
+        });
     }
 
     fn do_assignment(&mut self) {
@@ -92,8 +88,7 @@ impl State {
         }
         let b = self.stack.pop().unwrap();
         let a = self.stack.pop().unwrap();
-        if !(a.token_type == TokenType::Var
-            && b.token_type == TokenType::Num) {
+        if !(a.token_type == TokenType::Var && b.token_type == TokenType::Num) {
             self.stack.push(a);
             self.stack.push(b);
             println!("ERROR: Top vals of stack not suitable for assignment");
@@ -127,15 +122,15 @@ fn check_sufficient_stack_len(stack: &Stack, length: usize) -> bool {
         println!("ERROR: Insufficient values on stack.");
         return false;
     }
-    return true;
+    true
 }
 
 fn parse_input(text: &str, mut state: State) -> State {
     for item in text.split_whitespace() {
         match lex(item) {
             TokenType::Error => break,
-            TokenType::Num => state.push_num(&item),
-            TokenType::Var => state.push_var(&item),
+            TokenType::Num => state.push_num(item),
+            TokenType::Var => state.push_var(item),
             TokenType::Assignment => state.do_assignment(),
             TokenType::BinaryOp => {
                 if !check_sufficient_stack_len(&state.stack, 2) {
@@ -172,7 +167,7 @@ fn parse_input(text: &str, mut state: State) -> State {
                     _ => {
                         println!("ERROR: Unknown binary op: {}", item);
                         None
-                    },
+                    }
                 } {
                     let tok = Token {
                         token_type: TokenType::Num,
@@ -181,72 +176,67 @@ fn parse_input(text: &str, mut state: State) -> State {
                     };
                     state.stack.push(tok);
                 }
-            },
-            TokenType::Keyword => {
-                match item {
-                    "clear" => state.stack.clear(),
-                    "reset" => {
-                        state.stack.clear();
-                        state.assignments.clear();
-                    }
-                    "exit" => exit(0),
-                    "print" => {
-                        if !check_sufficient_stack_len(&state.stack, 1) {
-                            break;
-                        }
-                        let val = state.stack.pop().unwrap();
-                        println!("{}", val);
-                    },
-                    "drop" => {
-                        if !check_sufficient_stack_len(&state.stack, 1) {
-                            break;
-                        }
-                        state.stack.pop().unwrap();
-                    },
-                    "dup" => {
-                        if !check_sufficient_stack_len(&state.stack, 1) {
-                            break;
-                        }
-                        let val = state.stack.pop().unwrap();
-                        state.stack.push(val.clone());
-                        state.stack.push(val.clone());
-                    },
-                    "swap" => {
-                        if !check_sufficient_stack_len(&state.stack, 2) {
-                            break;
-                        }
-                        let a = state.stack.pop().unwrap();
-                        let b = state.stack.pop().unwrap();
-                        state.stack.push(a);
-                        state.stack.push(b);
-                    },
-                    "sum" => {
-                        let result = state.stack.0.iter().fold(
-                            0f64, 
-                            |acc, elem| -> f64 {
-                                let newvalue = match elem.token_type {
-                                    TokenType::Num => elem.value,
-                                    TokenType::Var => state.assignments[&elem.text],
-                                    _ => unreachable!("Not a num or a var"),
-                                };
-                                acc + newvalue
-                            } 
-                        );
-                        state.stack.clear();
-                        let tok = Token {
-                            token_type: TokenType::Num,
-                            value: result,
-                            text: "".to_string(),
-                        };
-                        state.stack.push(tok);
-                    }
-                    _ => println!("ERROR: Unknown keyword: {}", item),
-                }
             }
+            TokenType::Keyword => match item {
+                "clear" => state.stack.clear(),
+                "reset" => {
+                    state.stack.clear();
+                    state.assignments.clear();
+                }
+                "exit" => exit(0),
+                "print" => {
+                    if !check_sufficient_stack_len(&state.stack, 1) {
+                        break;
+                    }
+                    let val = state.stack.pop().unwrap();
+                    println!("{}", val);
+                }
+                "drop" => {
+                    if !check_sufficient_stack_len(&state.stack, 1) {
+                        break;
+                    }
+                    state.stack.pop().unwrap();
+                }
+                "dup" => {
+                    if !check_sufficient_stack_len(&state.stack, 1) {
+                        break;
+                    }
+                    let val = state.stack.pop().unwrap();
+                    state.stack.push(val.clone());
+                    state.stack.push(val.clone());
+                }
+                "swap" => {
+                    if !check_sufficient_stack_len(&state.stack, 2) {
+                        break;
+                    }
+                    let a = state.stack.pop().unwrap();
+                    let b = state.stack.pop().unwrap();
+                    state.stack.push(a);
+                    state.stack.push(b);
+                }
+                "sum" => {
+                    let result = state.stack.0.iter().fold(0f64, |acc, elem| -> f64 {
+                        let newvalue = match elem.token_type {
+                            TokenType::Num => elem.value,
+                            TokenType::Var => state.assignments[&elem.text],
+                            _ => unreachable!("Not a num or a var"),
+                        };
+                        acc + newvalue
+                    });
+                    state.stack.clear();
+                    let tok = Token {
+                        token_type: TokenType::Num,
+                        value: result,
+                        text: "".to_string(),
+                    };
+                    state.stack.push(tok);
+                }
+                _ => println!("ERROR: Unknown keyword: {}", item),
+            },
         }
     }
 
-    return state;
+    state
 }
 
 fn main() {
@@ -261,7 +251,7 @@ fn main() {
     println!("RustPN: A Rust powered RPN calculator.");
 
     loop {
-        stdout.write(b"> ").unwrap();
+        stdout.write_all(b"> ").unwrap();
         stdout.flush().unwrap();
         let mut input = String::new();
         stdin.read_line(&mut input).unwrap();
