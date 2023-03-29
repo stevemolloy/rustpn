@@ -2,7 +2,8 @@ use std::collections::HashMap;
 use std::fmt;
 use std::io;
 use std::io::Write;
-use std::process::exit;
+
+use crossterm::{cursor, terminal, ExecutableCommand};
 
 #[derive(Clone, PartialEq)]
 enum TokenType {
@@ -62,6 +63,7 @@ impl fmt::Display for Stack {
 struct State {
     stack: Stack,
     assignments: HashMap<String, f64>,
+    running: bool,
 }
 
 impl State {
@@ -192,7 +194,9 @@ fn parse_input(text: &str, mut state: State) -> State {
                     state.stack.clear();
                     state.assignments.clear();
                 }
-                "exit" => exit(0),
+                "exit" => {
+                    state.running = false;
+                }
                 "print" => {
                     if !check_sufficient_stack_len(&state.stack, 1) {
                         break;
@@ -256,9 +260,16 @@ fn main() {
     let mut stdout = io::stdout();
     let stdin = io::stdin();
 
+    stdout
+        .execute(terminal::Clear(terminal::ClearType::All))
+        .unwrap()
+        .execute(cursor::MoveTo(0, 0))
+        .unwrap();
+
     let mut state = State {
         stack: Stack(vec![]),
         assignments: HashMap::<String, f64>::new(),
+        running: true,
     };
 
     println!("RustPN: A Rust powered RPN calculator.");
@@ -266,11 +277,58 @@ fn main() {
     loop {
         stdout.write_all(b"> ").unwrap();
         stdout.flush().unwrap();
+
+        stdout.execute(cursor::SavePosition).unwrap();
+
+        stdout.execute(cursor::MoveTo(40, 0)).unwrap();
+        println!("|   Stack");
+        stdout.execute(cursor::MoveTo(40, 1)).unwrap();
+        println!("|===========");
+        for loc in 0..15 {
+            stdout.execute(cursor::MoveTo(40, loc + 2)).unwrap();
+            stdout
+                .execute(terminal::Clear(terminal::ClearType::UntilNewLine))
+                .unwrap();
+            if usize::from(loc) < state.stack.len() {
+                state.stack.0.reverse();
+                print!("| {}", state.stack.0[loc as usize]);
+                state.stack.0.reverse();
+            } else {
+                print!("|");
+            }
+        }
+
+        stdout.execute(cursor::MoveTo(52, 0)).unwrap();
+        println!("| Variables |");
+        stdout.execute(cursor::MoveTo(52, 1)).unwrap();
+        println!("|===========|");
+        for loc in 0..15 {
+            stdout.execute(cursor::MoveTo(52, loc + 2)).unwrap();
+            stdout
+                .execute(terminal::Clear(terminal::ClearType::UntilNewLine))
+                .unwrap();
+            print!("|           |");
+        }
+        let mut loc = 2;
+        for (key, value) in state.assignments.iter() {
+            stdout.execute(cursor::MoveTo(54, loc)).unwrap();
+            print!("{key} = {value}");
+            loc += 1;
+        }
+
+        stdout.execute(cursor::RestorePosition).unwrap();
+
         let mut input = String::new();
         stdin.read_line(&mut input).unwrap();
 
         state = parse_input(&input, state);
-        println!("Assigned variables: {:?}", state.assignments);
-        println!("Stack (len={}):\n{}", state.stack.len(), state.stack);
+
+        if !state.running {
+            break;
+        }
     }
+
+    stdout
+        .execute(terminal::Clear(terminal::ClearType::FromCursorDown))
+        .unwrap();
 }
