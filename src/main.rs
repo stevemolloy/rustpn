@@ -90,13 +90,19 @@ impl State {
         }
         let b = self.stack.pop().unwrap();
         let a = self.stack.pop().unwrap();
-        if !(a.token_type == TokenType::Var && b.token_type == TokenType::Num) {
+        if !(self.assignments.contains_key(&b.text)
+            || a.token_type == TokenType::Var && b.token_type == TokenType::Num)
+        {
             self.stack.push(a);
             self.stack.push(b);
             println!("ERROR: Top vals of stack not suitable for assignment");
             return;
         }
-        self.assignments.insert(a.text, b.value);
+        if b.token_type == TokenType::Num {
+            self.assignments.insert(a.text, b.value);
+        } else if b.token_type == TokenType::Var {
+            self.assignments.insert(a.text, self.assignments[&b.text]);
+        }
     }
 
     fn check_stacksvars_assigned(&self) -> bool {
@@ -299,20 +305,20 @@ fn main() {
         }
 
         stdout.execute(cursor::MoveTo(52, 0)).unwrap();
-        println!("| Variables |");
+        println!("|     Variables     |");
         stdout.execute(cursor::MoveTo(52, 1)).unwrap();
-        println!("|===========|");
+        println!("|===================|");
         for loc in 0..15 {
             stdout.execute(cursor::MoveTo(52, loc + 2)).unwrap();
             stdout
                 .execute(terminal::Clear(terminal::ClearType::UntilNewLine))
                 .unwrap();
-            print!("|           |");
+            print!("|                   |");
         }
         let mut loc = 2;
         for (key, value) in state.assignments.iter() {
             stdout.execute(cursor::MoveTo(54, loc)).unwrap();
-            print!("{key} = {value}");
+            print!("{key} = {value:.*}", 10, value = value);
             loc += 1;
         }
 
