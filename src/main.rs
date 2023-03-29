@@ -96,13 +96,11 @@ impl State {
         }
         self.assignments.insert(a.text, b.value);
     }
-    
+
     fn check_stacksvars_assigned(&self) -> bool {
         for ele in self.stack.0.iter() {
-            if ele.token_type == TokenType::Var {
-                if !self.assignments.contains_key(&ele.text) {
-                        return false;
-                }
+            if ele.token_type == TokenType::Var && !self.assignments.contains_key(&ele.text) {
+                return false;
             }
         }
         true
