@@ -96,6 +96,17 @@ impl State {
         }
         self.assignments.insert(a.text, b.value);
     }
+    
+    fn check_stacksvars_assigned(&self) -> bool {
+        for ele in self.stack.0.iter() {
+            if ele.token_type == TokenType::Var {
+                if !self.assignments.contains_key(&ele.text) {
+                        return false;
+                }
+            }
+        }
+        true
+    }
 }
 
 fn lex(text: &str) -> TokenType {
@@ -215,6 +226,10 @@ fn parse_input(text: &str, mut state: State) -> State {
                     state.stack.push(b);
                 }
                 "sum" => {
+                    if !state.check_stacksvars_assigned() {
+                        println!("ERROR: Attempting to use stack containing unassigned variables.");
+                        break;
+                    }
                     let result = state.stack.0.iter().fold(0f64, |acc, elem| -> f64 {
                         let newvalue = match elem.token_type {
                             TokenType::Num => elem.value,
