@@ -120,7 +120,7 @@ fn lex(text: &str) -> TokenType {
     match text {
         "+" | "-" | "*" | "/" => TokenType::BinaryOp,
         "clear" | "reset" | "exit" | "print" => TokenType::Keyword,
-        "swap" | "dup" | "drop" => TokenType::Keyword,
+        "swap" | "dup" | "drop" | "over" => TokenType::Keyword,
         "prod"| "sum" => TokenType::StackFold,
         "=" => TokenType::Assignment,
         _ => {
@@ -232,6 +232,16 @@ fn parse_input(text: &str, mut state: State) -> State {
                     }
                     let a = state.stack.pop().unwrap();
                     let b = state.stack.pop().unwrap();
+                    state.stack.push(a);
+                    state.stack.push(b);
+                }
+                "over" => {
+                    if !check_sufficient_stack_len(&state.stack, 2) {
+                        break;
+                    }
+                    let a = state.stack.pop().unwrap();
+                    let b = state.stack.pop().unwrap();
+                    state.stack.push(b.clone());
                     state.stack.push(a);
                     state.stack.push(b);
                 }
