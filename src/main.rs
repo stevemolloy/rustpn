@@ -121,7 +121,7 @@ fn lex(text: &str) -> TokenType {
         "+" | "-" | "*" | "/" => TokenType::BinaryOp,
         "clear" | "reset" | "exit" | "print" => TokenType::Keyword,
         "swap" | "dup" | "drop" | "over" => TokenType::Keyword,
-        "prod"| "sum" => TokenType::StackFold,
+        "prod" | "sum" => TokenType::StackFold,
         "=" => TokenType::Assignment,
         _ => {
             if text.parse::<f64>().is_ok() {
@@ -246,7 +246,7 @@ fn parse_input(text: &str, mut state: State) -> State {
                     state.stack.push(b);
                 }
                 _ => println!("ERROR: Unknown keyword: {}", item),
-            }
+            },
             TokenType::StackFold => match item {
                 "sum" => {
                     if !state.check_stacksvars_assigned() {
