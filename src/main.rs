@@ -10,6 +10,7 @@ enum TokenType {
     Num,
     Var,
     BinaryOp,
+    UnaryOp,
     Assignment,
     Keyword,
     StackFold,
@@ -119,6 +120,7 @@ impl State {
 fn lex(text: &str) -> TokenType {
     match text {
         "+" | "-" | "*" | "/" => TokenType::BinaryOp,
+        "sqrt" => TokenType::UnaryOp,
         "clear" | "reset" | "exit" | "print" => TokenType::Keyword,
         "swap" | "dup" | "drop" | "over" => TokenType::Keyword,
         "prod" | "sum" => TokenType::StackFold,
@@ -151,6 +153,36 @@ fn parse_input(text: &str, mut state: State) -> State {
             TokenType::Num => state.push_num(item),
             TokenType::Var => state.push_var(item),
             TokenType::Assignment => state.do_assignment(),
+            TokenType::UnaryOp => {
+                if !check_sufficient_stack_len(&state.stack, 1) {
+                    break;
+                }
+                let a = state.stack.pop().unwrap();
+                if a.token_type == TokenType::Var && !state.assignments.contains_key(&a.text) {
+                    println!("ERROR: Var {} has not yet been assigned a value", a.text);
+                    state.stack.push(a);
+                    break;
+                }
+                let val1 = match a.token_type {
+                    TokenType::Num => a.value,
+                    TokenType::Var => state.assignments[&a.text],
+                    _ => unreachable!(),
+                };
+                if let Some(result) = match item {
+                    "sqrt" => Some(val1.sqrt()),
+                    _ => {
+                        println!("ERROR: Unknown unary op: {}", item);
+                        None
+                    }
+                } {
+                    let tok = Token {
+                        token_type: TokenType::Num,
+                        value: result,
+                        text: "".to_string(),
+                    };
+                    state.stack.push(tok);
+                }
+            }
             TokenType::BinaryOp => {
                 if !check_sufficient_stack_len(&state.stack, 2) {
                     break;
